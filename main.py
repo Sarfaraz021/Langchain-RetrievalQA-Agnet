@@ -7,11 +7,13 @@ import time
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from dotenv import load_dotenv
+from langchain.prompts.prompt import PromptTemplate
+from prompt import template
 
 # loading environment variables
 load_dotenv()
 
-
+os.getenv("OPENAI_API_KEY")
 # Load and Chunk the document
 loader = PyPDFLoader("data/layout-parser-paper.pdf")
 docs = loader.load()
@@ -36,7 +38,11 @@ time.sleep(1)
 
 
 # Initialize a LangChain object for chatting with the LLM
-# without knowledge from Pinecone.
+prompt_template = PromptTemplate(
+    input_variables=["history", "context", "question"],
+    template=template,
+)
+
 llm = ChatOpenAI(
     openai_api_key=os.environ.get('OPENAI_API_KEY'),
     model_name='gpt-4o-mini',
