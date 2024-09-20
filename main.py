@@ -9,13 +9,14 @@ from langchain_community.document_loaders import PyPDFLoader
 from dotenv import load_dotenv
 from langchain.prompts.prompt import PromptTemplate
 from prompt import template
+from langchain.memory import ConversationBufferMemory
 
 # loading environment variables
 load_dotenv()
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 # Load and Chunk the document
-loader = PyPDFLoader(r"D:\yusuf-work\data\6.pdf")
+loader = PyPDFLoader(r"D:\yusuf-work\data\tyt18.pdf")
 documents = loader.load()
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000, chunk_overlap=200)
@@ -58,12 +59,16 @@ qa = RetrievalQA.from_chain_type(
     retriever=docsearch.as_retriever(),
     chain_type_kwargs={
         "verbose": False,
-        "prompt": prompt_template
+        "prompt": prompt_template,
+        "memory": ConversationBufferMemory(memory_key="history", input_key="question")
     }
 )
 
-query1 = """What is in my context?"""
+while True:
 
-print("Chat with knowledge:")
-response = qa.invoke(query1)
-print(response)
+    question = input("User> ")
+    if question.lower() == "exit":
+        break
+    else:
+        response = qa.invoke(question)
+        print(f'AI> {response['result']}')
