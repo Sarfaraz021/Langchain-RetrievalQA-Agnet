@@ -13,11 +13,13 @@ from prompt import template
 # loading environment variables
 load_dotenv()
 
-os.getenv("OPENAI_API_KEY")
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 # Load and Chunk the document
-loader = PyPDFLoader("data/layout-parser-paper.pdf")
-docs = loader.load()
-split_docs = RecursiveCharacterTextSplitter(docs)
+loader = PyPDFLoader(r"D:\yusuf-work\data\6.pdf")
+documents = loader.load()
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000, chunk_overlap=200)
+docs = text_splitter.split_documents(documents)
 
 # Initialize a LangChain embedding object.
 model_name = "multilingual-e5-large"
@@ -28,7 +30,7 @@ embeddings = PineconeEmbeddings(
 
 # Embed each chunk and upsert the embeddings into your Pinecone index.
 docsearch = PineconeVectorStore.from_documents(
-    documents=split_docs,
+    documents=docs,
     index_name="airagapp",
     embedding=embeddings,
     namespace="wondervector5000"
@@ -44,7 +46,6 @@ prompt_template = PromptTemplate(
 )
 
 llm = ChatOpenAI(
-    openai_api_key=os.environ.get('OPENAI_API_KEY'),
     model_name='gpt-4o-mini',
     temperature=0.7
 )
@@ -54,12 +55,15 @@ llm = ChatOpenAI(
 qa = RetrievalQA.from_chain_type(
     llm=llm,
     chain_type="stuff",
-    retriever=docsearch.as_retriever()
+    retriever=docsearch.as_retriever(),
+    chain_type_kwargs={
+        "verbose": False,
+        "prompt": prompt_template
+    }
 )
 
+query1 = """What is in my context?"""
 
-query1 = """What are the first 3 steps for getting started 
-with the WonderVector5000?"""
-
-print("Query 1\n")
 print("Chat with knowledge:")
+response = qa.invoke(query1)
+print(response)
